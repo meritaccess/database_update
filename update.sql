@@ -17,3 +17,29 @@ CREATE TABLE IF NOT EXISTS CasovePlany ( Id_CasovyPlan INT AUTO_INCREMENT PRIMAR
     So_PrvniZacatek VARCHAR(8) NOT NULL DEFAULT '00:00:00', So_PrvniKonec VARCHAR(8) NOT NULL DEFAULT '00:00:00', So_DruhyZacatek VARCHAR(8) NOT NULL DEFAULT '00:00:00', So_DruhyKonec VARCHAR(8) NOT NULL DEFAULT '00:00:00', 
     Ne_PrvniZacatek VARCHAR(8) NOT NULL DEFAULT '00:00:00', Ne_PrvniKonec VARCHAR(8) NOT NULL DEFAULT '00:00:00', Ne_DruhyZacatek VARCHAR(8) NOT NULL DEFAULT '00:00:00', Ne_DruhyKonec VARCHAR(8) NOT NULL DEFAULT '00:00:00', 
     Svatky_PrvniZacatek VARCHAR(8) NOT NULL DEFAULT '00:00:00', Svatky_PrvniKonec VARCHAR(8) NOT NULL DEFAULT '00:00:00', Svatky_DruhyZacatek VARCHAR(8) NOT NULL DEFAULT '00:00:00', Svatky_DruhyKonec VARCHAR(8) NOT NULL DEFAULT '00:00:00' );
+
+DROP PROCEDURE IF EXISTS SetVal;
+DROP PROCEDURE IF EXISTS CanAccess;
+
+-- add config value SYSPLANREADER1
+INSERT INTO `ConfigDU` (`property`, `value`, `regex`, `sample`)
+SELECT 'SYSPLANREADER1', '0', '^(?:[0-9]|[1-5][0-9]|6[0-3])$', '0=noplan'
+FROM DUAL
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM `ConfigDU`
+    WHERE `property` = 'SYSPLANREADER1'
+);
+-- add config value SYSPLANREADER2
+INSERT INTO `ConfigDU` (`property`, `value`, `regex`, `sample`)
+SELECT 'SYSPLANREADER2', '0', '^(?:[0-9]|[1-5][0-9]|6[0-3])$', '0=noplan'
+FROM DUAL
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM `ConfigDU`
+    WHERE `property` = 'SYSPLANREADER2'
+);
+-- DELETE FROM running WHERE property = 'R1ReadCount';
+-- DELETE FROM running WHERE property = 'R2ReadCount';
+-- DELETE FROM running WHERE property = 'R1ReadError';
+-- DELETE FROM running WHERE property = 'R2ReadError';
