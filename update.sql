@@ -45,3 +45,36 @@ WHERE NOT EXISTS (
 -- DELETE FROM running WHERE property = 'R2ReadError';
 
 CREATE OR REPLACE ALGORITHM=UNDEFINED DEFINER=`ma`@`localhost` SQL SECURITY DEFINER VIEW `AccessDetails`  AS SELECT `Access`.`Kdy` AS `Kdy`, `Access`.`Karta` AS `Karta`, `Access`.`Ctecka` AS `Ctecka`, `Access`.`StavZpracovani` AS `StavZpracovani`, `Karty`.`Pozn` AS `Pozn`, `Karty`.`Povoleni` AS `Povoleni`, `Karty`.`Smazano` AS `Smazano`, `Karty`.`cardid` AS `cardid` FROM (`Access` left join `Karty` on(rtrim(`Access`.`Karta`) = rtrim(`Karty`.`Karta`))) ;
+DELIMITER $$
+CREATE DEFINER=`ma`@`localhost` PROCEDURE `cleandb`()
+BEGIN
+    DECLARE rc INT;
+    DECLARE max_lines INT;
+    set max_lines=2000;
+    SELECT COUNT(*) INTO rc FROM logs;
+    set rc=rc-max_lines;
+    select rc;
+    DELETE FROM logs
+    WHERE id IN (
+        SELECT id FROM (
+            SELECT id FROM logs
+            ORDER BY ts ASC
+            LIMIT rc
+        ) AS subquery
+    );
+
+    SELECT COUNT(*) INTO rc FROM Access;
+    set rc=rc-max_lines;
+    select rc;
+    DELETE FROM Access
+    WHERE Id_Access IN (
+        SELECT Id_Access FROM (
+            SELECT Id_Access FROM Access
+            ORDER BY Kdy ASC
+            LIMIT rc
+        ) AS subquery
+    );        
+END$$
+DELIMITER ;
+CREATE DEFINER=`ma`@`localhost` EVENT `clean_event` ON SCHEDULE EVERY 1 HOUR STARTS '2024-08-15 12:23:42' ON COMPLETION NOT PRESERVE ENABLE DO CALL clean()
+-- add lines to /etc/mzsql/mariadb.cfg [mysqld]  event_scheduler = ON
