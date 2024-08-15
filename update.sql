@@ -51,31 +51,36 @@ CREATE DEFINER=`ma`@`localhost` PROCEDURE `cleandb`()
 BEGIN
     DECLARE rc INT;
     DECLARE max_lines INT;
-    set max_lines=2000;
+    set max_lines=20;
     SELECT COUNT(*) INTO rc FROM logs;
-    set rc=rc-max_lines;
-    select rc;
-    DELETE FROM logs
-    WHERE id IN (
-        SELECT id FROM (
-            SELECT id FROM logs
-            ORDER BY ts ASC
-            LIMIT rc
-        ) AS subquery
-    );
-
+    if rc > max_lines THEN
+    	set rc=rc-max_lines;
+    	select rc;
+    	DELETE FROM logs
+    	WHERE id IN (
+        	SELECT id FROM (
+            	SELECT id FROM logs
+            	ORDER BY ts ASC
+            	LIMIT rc
+        	) AS subquery
+    	);
+    END IF;
+    
     SELECT COUNT(*) INTO rc FROM Access;
-    set rc=rc-max_lines;
-    select rc;
-    DELETE FROM Access
-    WHERE Id_Access IN (
-        SELECT Id_Access FROM (
-            SELECT Id_Access FROM Access
-            ORDER BY Kdy ASC
-            LIMIT rc
-        ) AS subquery
-    );        
+    if rc > max_lines THEN
+	    set rc=rc-max_lines;
+   	 	select rc;
+    	DELETE FROM Access
+    		WHERE Id_Access IN (
+        		SELECT Id_Access FROM (
+            		SELECT Id_Access FROM Access	
+            		ORDER BY Kdy ASC
+            		LIMIT rc
+        		) AS subquery
+    		);
+      end if;      
 END$$
 DELIMITER ;
+
 CREATE DEFINER=`ma`@`localhost` EVENT IF NOT EXISTS `clean_event` ON SCHEDULE EVERY 1 HOUR STARTS '2024-08-15 12:23:42' ON COMPLETION NOT PRESERVE ENABLE DO CALL cleandb()
 -- add lines to /etc/mzsql/mariadb.cfg [mysqld]  event_scheduler = ON
