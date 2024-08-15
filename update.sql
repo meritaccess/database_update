@@ -51,7 +51,7 @@ CREATE DEFINER=`ma`@`localhost` PROCEDURE `cleandb`()
 BEGIN
     DECLARE rc INT;
     DECLARE max_lines INT;
-    set max_lines=20;
+    set max_lines=2000;
     SELECT COUNT(*) INTO rc FROM logs;
     if rc > max_lines THEN
     	set rc=rc-max_lines;
