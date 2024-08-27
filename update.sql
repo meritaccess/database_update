@@ -84,3 +84,40 @@ DELIMITER ;
 
 CREATE DEFINER=`ma`@`localhost` EVENT IF NOT EXISTS `clean_event` ON SCHEDULE EVERY 1 HOUR STARTS '2024-08-15 12:23:42' ON COMPLETION NOT PRESERVE ENABLE DO CALL cleandb()
 -- add lines to /etc/mzsql/mariadb.cfg [mysqld]  event_scheduler = ON
+
+-- add config value ivar
+INSERT INTO `ConfigDU` (`property`, `value`, `regex`, `sample`)
+SELECT 'enable_ivar', 0, '^(?:[0-9]|[1-5][0-9]|6[0-3])$', '0 not used'
+FROM DUAL
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM `ConfigDU`
+    WHERE `property` = 'enable_ivar'
+);
+
+INSERT INTO `ConfigDU` (`property`, `value`, `regex`, `sample`)
+SELECT 'ivar_server', 'http://10.10.10.1', '.*', 'ipadress of ivar server'
+FROM DUAL
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM `ConfigDU`
+    WHERE `property` = 'ivar_server'
+);
+
+INSERT INTO `ConfigDU` (`property`, `value`, `regex`, `sample`)
+SELECT 'ivar_term_name_1', 'term1', '.*', 'ipadress of ivar server'
+FROM DUAL
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM `ConfigDU`
+    WHERE `property` = 'ivar_term_name_1'
+);
+
+INSERT INTO `ConfigDU` (`property`, `value`, `regex`, `sample`)
+SELECT 'ivar_term_name_2', 'term2', '.*', 'ipadress of ivar server'
+FROM DUAL
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM `ConfigDU`
+    WHERE `property` = 'ivar_term_name_2'
+);
