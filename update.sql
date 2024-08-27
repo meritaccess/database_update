@@ -105,19 +105,19 @@ WHERE NOT EXISTS (
 );
 
 INSERT INTO `ConfigDU` (`property`, `value`, `regex`, `sample`)
-SELECT 'ivar_term_name_1', 'term1', '.*', 'ipadress of ivar server'
+SELECT 'ivar_term_name1', 'term1', '.*', 'ipadress of ivar server'
 FROM DUAL
 WHERE NOT EXISTS (
     SELECT 1
     FROM `ConfigDU`
-    WHERE `property` = 'ivar_term_name_1'
+    WHERE `property` = 'ivar_term_name1'
 );
 
 INSERT INTO `ConfigDU` (`property`, `value`, `regex`, `sample`)
-SELECT 'ivar_term_name_2', 'term2', '.*', 'ipadress of ivar server'
+SELECT 'ivar_term_name2', 'term2', '.*', 'ipadress of ivar server'
 FROM DUAL
 WHERE NOT EXISTS (
     SELECT 1
     FROM `ConfigDU`
-    WHERE `property` = 'ivar_term_name_2'
+    WHERE `property` = 'ivar_term_name2'
 );
