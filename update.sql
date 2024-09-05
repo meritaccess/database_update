@@ -119,6 +119,15 @@ WHERE NOT EXISTS (
     WHERE `property` = 'ivar_term_name2'
 );
 
+INSERT INTO `ConfigDU` (`property`, `value`, `regex`, `sample`)
+SELECT 'swap_wiegand_pins', '0', '[0-1]+', '0 - default state, 1 - use monitor and open for reader'
+FROM DUAL
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM `ConfigDU`
+    WHERE `property` = 'swap_wiegand_pins'
+);
+
 
 CREATE DEFINER=`ma`@`localhost` EVENT IF NOT EXISTS `clean_event` ON SCHEDULE EVERY 1 HOUR STARTS '2024-08-15 12:23:42' ON COMPLETION NOT PRESERVE ENABLE DO CALL cleandb()
 -- add lines to /etc/mzsql/mariadb.cfg [mysqld]  event_scheduler = ON
