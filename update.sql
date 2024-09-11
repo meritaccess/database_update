@@ -128,6 +128,44 @@ WHERE NOT EXISTS (
     WHERE `property` = 'swap_wiegand_pins'
 );
 
+INSERT INTO `ConfigDU` (`property`, `value`, `regex`, `sample`)
+SELECT 'disable_web', '0', '[0-1]+', '0 - default, 1 - disable'
+FROM DUAL
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM `ConfigDU`
+    WHERE `property` = 'disable_web'
+);
+
+INSERT INTO `ConfigDU` (`property`, `value`, `regex`, `sample`)
+SELECT 'disable_phpmyadmin', '0', '[0-1]+', '0 - default, 1 - disable'
+FROM DUAL
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM `ConfigDU`
+    WHERE `property` = 'disable_phpmyadmin'
+);
+
+INSERT INTO `ConfigDU` (`property`, `value`, `regex`, `sample`)
+SELECT 'disable_ssh', '0', '[0-1]+', '0 - default, 1 - disable'
+FROM DUAL
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM `ConfigDU`
+    WHERE `property` = 'disable_ssh'
+);
+
+INSERT INTO `ConfigDU` (`property`, `value`, `regex`, `sample`)
+SELECT 'disable_ssh_password', '0', '[0-1]+', '0 - default, 1 - disable'
+FROM DUAL
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM `ConfigDU`
+    WHERE `property` = 'disable_ssh_password'
+);
+
+
+
 
 CREATE DEFINER=`ma`@`localhost` EVENT IF NOT EXISTS `clean_event` ON SCHEDULE EVERY 1 HOUR STARTS '2024-08-15 12:23:42' ON COMPLETION NOT PRESERVE ENABLE DO CALL cleandb()
 -- add lines to /etc/mzsql/mariadb.cfg [mysqld]  event_scheduler = ON
