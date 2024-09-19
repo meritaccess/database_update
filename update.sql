@@ -138,15 +138,6 @@ WHERE NOT EXISTS (
 );
 
 INSERT INTO `ConfigDU` (`property`, `value`, `regex`, `sample`)
-SELECT 'disable_phpmyadmin', '0', '[0-1]+', '0 - default, 1 - disable'
-FROM DUAL
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM `ConfigDU`
-    WHERE `property` = 'disable_phpmyadmin'
-);
-
-INSERT INTO `ConfigDU` (`property`, `value`, `regex`, `sample`)
 SELECT 'disable_ssh', '0', '[0-1]+', '0 - default, 1 - disable'
 FROM DUAL
 WHERE NOT EXISTS (
