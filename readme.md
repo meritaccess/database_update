@@ -13,5 +13,5 @@ version.txt
 
 2.4 add table tempCasovePlany, add procedure ActivateTempCasovePlany
 
-2.5 change default appupdate value  from meritaccess/merit_access to meritaccess
+2.5 change default appupdate value  from meritaccess/merit_access to meritaccess, changes to clean_db() and clean_event
 
