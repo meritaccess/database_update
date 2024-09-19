@@ -39,8 +39,8 @@ WHERE NOT EXISTS (
     FROM `ConfigDU`
     WHERE `property` = 'SYSPLANREADER2'
 );
-DELETE FROM running WHERE property = 'R1ReadCount';
-DELETE FROM running WHERE property = 'R2ReadCount';
+-- DELETE FROM running WHERE property = 'R1ReadCount';
+-- DELETE FROM running WHERE property = 'R2ReadCount';
 DELETE FROM running WHERE property = 'R1ReadError';
 DELETE FROM running WHERE property = 'R2ReadError';
 
