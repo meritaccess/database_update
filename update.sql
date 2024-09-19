@@ -39,10 +39,10 @@ WHERE NOT EXISTS (
     FROM `ConfigDU`
     WHERE `property` = 'SYSPLANREADER2'
 );
--- DELETE FROM running WHERE property = 'R1ReadCount';
--- DELETE FROM running WHERE property = 'R2ReadCount';
--- DELETE FROM running WHERE property = 'R1ReadError';
--- DELETE FROM running WHERE property = 'R2ReadError';
+DELETE FROM running WHERE property = 'R1ReadCount';
+DELETE FROM running WHERE property = 'R2ReadCount';
+DELETE FROM running WHERE property = 'R1ReadError';
+DELETE FROM running WHERE property = 'R2ReadError';
 
 CREATE OR REPLACE ALGORITHM=UNDEFINED DEFINER=`ma`@`localhost` SQL SECURITY DEFINER VIEW `AccessDetails`  AS SELECT `Access`.`Kdy` AS `Kdy`, `Access`.`Karta` AS `Karta`, `Access`.`Ctecka` AS `Ctecka`, `Access`.`StavZpracovani` AS `StavZpracovani`, `Karty`.`Pozn` AS `Pozn`, `Karty`.`Povoleni` AS `Povoleni`, `Karty`.`Smazano` AS `Smazano`, `Karty`.`cardid` AS `cardid` FROM (`Access` left join `Karty` on(rtrim(`Access`.`Karta`) = rtrim(`Karty`.`Karta`))) ;
 
