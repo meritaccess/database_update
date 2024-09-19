@@ -184,13 +184,12 @@ UPDATE ConfigDU
 SET value = 'meritaccess' 
 WHERE property = 'appupdate' AND value = 'meritaccess/merit_access';
 
-CREATE DEFINER=`ma`@`localhost` EVENT IF NOT EXISTS `clean_event` ON SCHEDULE EVERY 1 HOUR STARTS '2024-08-15 12:23:42' ON COMPLETION NOT PRESERVE ENABLE DO CALL cleandb()
+-- CREATE DEFINER=`ma`@`localhost` EVENT IF NOT EXISTS `clean_event` ON SCHEDULE EVERY 1 HOUR STARTS '2024-08-15 12:23:42' ON COMPLETION NOT PRESERVE ENABLE DO CALL cleandb()
 -- add lines to /etc/mzsql/mariadb.cfg [mysqld]  event_scheduler = ON
 
 DROP PROCEDURE IF EXISTS cleandb;
 DROP EVENT IF EXISTS `clean_event`;
 
-CREATE DEFINER=ma@localhost EVENT clean_event ON SCHEDULE EVERY 1 DAY STARTS '2024-09-19 12:01:20' ON COMPLETION NOT PRESERVE ENABLE DO CALL MeritAccessLocal.cleandb()
 DELIMITER $$
 CREATE DEFINER=ma@localhost PROCEDURE cleandb()
 BEGIN
@@ -226,3 +225,5 @@ BEGIN
       end if;      
 END$$
 DELIMITER ;
+
+CREATE DEFINER=ma@localhost EVENT clean_event ON SCHEDULE EVERY 1 DAY STARTS '2024-09-19 12:01:20' ON COMPLETION NOT PRESERVE ENABLE DO CALL MeritAccessLocal.cleandb()
