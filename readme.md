@@ -9,7 +9,7 @@ version.txt
 
 2.2 add swap_wiegand_pins into ConfigDU
 
-2.3 add disable_web, disable_phpmyadmin, disable_ssh, disable_ssh_password into ConfigDU
+2.3 add disable_web, disable_ssh, disable_ssh_password into ConfigDU
 
 2.4 add table tempCasovePlany, add procedure ActivateTempCasovePlany
 
