@@ -184,7 +184,45 @@ UPDATE ConfigDU
 SET value = 'meritaccess' 
 WHERE property = 'appupdate' AND value = 'meritaccess/merit_access';
 
-
-
 CREATE DEFINER=`ma`@`localhost` EVENT IF NOT EXISTS `clean_event` ON SCHEDULE EVERY 1 HOUR STARTS '2024-08-15 12:23:42' ON COMPLETION NOT PRESERVE ENABLE DO CALL cleandb()
 -- add lines to /etc/mzsql/mariadb.cfg [mysqld]  event_scheduler = ON
+
+DROP PROCEDURE IF EXISTS cleandb;
+DROP EVENT IF EXISTS `clean_event`;
+
+CREATE DEFINER=ma@localhost EVENT clean_event ON SCHEDULE EVERY 1 DAY STARTS '2024-09-19 12:01:20' ON COMPLETION NOT PRESERVE ENABLE DO CALL MeritAccessLocal.cleandb()
+DELIMITER $$
+CREATE DEFINER=ma@localhost PROCEDURE cleandb()
+BEGIN
+    DECLARE rc INT;
+    DECLARE max_lines INT;
+    set max_lines=2000;
+    SELECT COUNT(*) INTO rc FROM MeritAccessLocal.logs;
+    if rc > max_lines THEN
+    	set rc=rc-max_lines;
+    	select rc;
+    	DELETE FROM MeritAccessLocal.logs
+    	WHERE id IN (
+        	SELECT id FROM (
+            	SELECT id FROM MeritAccessLocal.logs
+            	ORDER BY ts ASC
+            	LIMIT rc
+        	) AS subquery
+    	);
+    END IF;
+    
+    SELECT COUNT(*) INTO rc FROM MeritAccessLocal.Access;
+    if rc > max_lines THEN
+	    set rc=rc-max_lines;
+   	 	select rc;
+    	DELETE FROM MeritAccessLocal.Access
+    		WHERE Id_Access IN (
+        		SELECT Id_Access FROM (
+            		SELECT Id_Access FROM MeritAccessLocal.Access	
+            		ORDER BY Kdy ASC
+            		LIMIT rc
+        		) AS subquery
+    		);
+      end if;      
+END$$
+DELIMITER ;
