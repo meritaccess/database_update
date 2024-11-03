@@ -39,8 +39,7 @@ WHERE NOT EXISTS (
     FROM `ConfigDU`
     WHERE `property` = 'SYSPLANREADER2'
 );
--- DELETE FROM running WHERE property = 'R1ReadCount';
--- DELETE FROM running WHERE property = 'R2ReadCount';
+
 DELETE FROM running WHERE property = 'R1ReadError';
 DELETE FROM running WHERE property = 'R2ReadError';
 
@@ -188,3 +187,104 @@ BEGIN
       end if;
 END$$
 DELIMITER ;
+
+DELETE FROM running WHERE property = 'R1ReadCount';
+DELETE FROM running WHERE property = 'R2ReadCount';
+DELETE FROM ConfigDU WHERE property = 'SYSPLANREADER1';
+DELETE FROM ConfigDU WHERE property = 'SYSPLANREADER2';
+
+CREATE TABLE IF NOT EXISTS `config_groups` (
+  `config_id` int(11) NOT NULL,
+  `groups_id` int(10) UNSIGNED NOT NULL,
+  PRIMARY KEY (`config_id`,`groups_id`),
+  KEY `fk_groups_id` (`groups_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS `Groups` (
+  `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `groupname` varchar(10) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+INSERT IGNORE INTO `Groups` (`id`, `groupname`) VALUES
+(1, 'Common'),
+(2, 'IP'),
+(3, 'WiFi'),
+(4, 'MQTT'),
+(5, 'IVAR'),
+(6, 'OSDP');
+
+
+ALTER TABLE `config_groups`
+  ADD CONSTRAINT `fk_config_id` FOREIGN KEY (`config_id`) REFERENCES `ConfigDU` (`id`),
+  ADD CONSTRAINT `fk_groups_id` FOREIGN KEY (`groups_id`) REFERENCES `Groups` (`id`);
+
+
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 1, id from ConfigDU WHERE property like 'mode%';
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 1, id from ConfigDU WHERE property like 'ws%';
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 1, id from ConfigDU WHERE property like 'appupdate%';
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 1, id from ConfigDU WHERE property like 'easy_add%';
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 1, id from ConfigDU WHERE property like 'easy_remove%';
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 1, id from ConfigDU WHERE property like 'update_mode%';
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 1, id from ConfigDU WHERE property like 'syslogserver%';
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 1, id from ConfigDU WHERE property like 'swap_wiegand_pins%';
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 1, id from ConfigDU WHERE property like 'disable_web%';
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 1, id from ConfigDU WHERE property like 'disable_ssh%';
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 1, id from ConfigDU WHERE property like 'disable_ssh_password%';
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 1, id from ConfigDU WHERE property like 'maxRows%';
+
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 2, id from ConfigDU WHERE property like 'dhcp%';
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 2, id from ConfigDU WHERE property like 'ip%';
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 2, id from ConfigDU WHERE property like 'mask%';
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 2, id from ConfigDU WHERE property like 'dg%';
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 2, id from ConfigDU WHERE property like 'dns1%';
+
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 3, id from ConfigDU WHERE property like 'enablewifi%';
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 3, id from ConfigDU WHERE property like 'ssid%';
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 3, id from ConfigDU WHERE property like 'wifiuser`%';
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 3, id from ConfigDU WHERE property like 'wifipass%';
+
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 4, id from ConfigDU WHERE property like 'mqttenabled%';
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 4, id from ConfigDU WHERE property like 'mqttserver%';
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 4, id from ConfigDU WHERE property like 'mqtttopic%';
+
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 5, id from ConfigDU WHERE property like 'enable_ivar%';
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 5, id from ConfigDU WHERE property like 'ivar_server%';
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 5, id from ConfigDU WHERE property like 'ivar_term_name1%';
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 5, id from ConfigDU WHERE property like 'ivar_term_name2%';
+
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 6, id from ConfigDU WHERE property like 'enable_osdp%';
+
+
+CREATE OR REPLACE ALGORITHM=UNDEFINED DEFINER=ma@localhost SQL SECURITY DEFINER VIEW ConfigByGroups AS SELECT Groups.groupname AS groupname, ConfigDU.id AS id, ConfigDU.property AS property, ConfigDU.value AS value, ConfigDU.regex AS regex, ConfigDU.sample AS sample FROM ((config_groups join Groups on(config_groups.groups_id = Groups.id)) join ConfigDU on(config_groups.config_id = ConfigDU.id));
+
+CREATE TABLE IF NOT EXISTS `Readers` (
+    `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+    `protocol` varchar(20),
+    `address` tinyint UNSIGNED UNIQUE,
+    `active` tinyint(1) UNSIGNED,
+    `output` varchar(20),
+    `pulse_time` smallint UNSIGNED,
+    `sys_plan` smallint UNSIGNED,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+INSERT IGNORE INTO Readers(id, active, output, pulse_time, sys_plan) VALUES(1, 0, 'relay', 3000, 0);
+INSERT IGNORE INTO Readers(id, active, output, pulse_time, sys_plan) VALUES(2, 0, 'relay', 3000, 0);
+INSERT IGNORE INTO Readers(id, active, output, pulse_time, sys_plan) VALUES(3, 0, 'gpio', 3000, 0);
+INSERT IGNORE INTO Readers(id, active, output, pulse_time, sys_plan) VALUES(4, 0, 'gpio', 3000, 0);
+
+
+INSERT INTO ConfigDU (`property`, `value`, `regex`, `sample`)
+SELECT 'enable_osdp', 0, '[0-1]+', 0
+FROM DUAL
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM `ConfigDU`
+    WHERE `property` = 'enable_osdp'
+);
+
+
+
