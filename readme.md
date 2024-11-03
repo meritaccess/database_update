@@ -15,4 +15,4 @@ version.txt
 
 2.5 change default appupdate value  from meritaccess/merit_access to meritaccess, changes to clean_db() and clean_event, removed from running R1ReadError and R2ReadError
 
-2.6 group support added, osdp support added
+2.6 group support added, osdp support added, remove SYSPLANREADER1, SYSPLANREADER2, R1ReadCount, R2ReadCount
