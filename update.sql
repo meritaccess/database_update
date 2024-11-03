@@ -193,6 +193,15 @@ DELETE FROM running WHERE property = 'R2ReadCount';
 DELETE FROM ConfigDU WHERE property = 'SYSPLANREADER1';
 DELETE FROM ConfigDU WHERE property = 'SYSPLANREADER2';
 
+INSERT INTO ConfigDU (`property`, `value`, `regex`, `sample`)
+SELECT 'enable_osdp', 0, '[0-1]+', 0
+FROM DUAL
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM `ConfigDU`
+    WHERE `property` = 'enable_osdp'
+);
+
 CREATE TABLE IF NOT EXISTS `config_groups` (
   `config_id` int(11) NOT NULL,
   `groups_id` int(10) UNSIGNED NOT NULL,
@@ -275,16 +284,6 @@ INSERT IGNORE INTO Readers(id, active, output, pulse_time, sys_plan) VALUES(1, 0
 INSERT IGNORE INTO Readers(id, active, output, pulse_time, sys_plan) VALUES(2, 0, 'relay', 3000, 0);
 INSERT IGNORE INTO Readers(id, active, output, pulse_time, sys_plan) VALUES(3, 0, 'gpio', 3000, 0);
 INSERT IGNORE INTO Readers(id, active, output, pulse_time, sys_plan) VALUES(4, 0, 'gpio', 3000, 0);
-
-
-INSERT INTO ConfigDU (`property`, `value`, `regex`, `sample`)
-SELECT 'enable_osdp', 0, '[0-1]+', 0
-FROM DUAL
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM `ConfigDU`
-    WHERE `property` = 'enable_osdp'
-);
 
 
 
