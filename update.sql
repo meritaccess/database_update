@@ -1,3 +1,5 @@
+
+-- rucne upraveno by jara 15.9.2025
 -- add config value syslogserver
 INSERT INTO `ConfigDU` (`property`, `value`, `regex`, `sample`)
 SELECT 'syslogserver', '', '.*?', '192.168.10.201'
@@ -65,7 +67,7 @@ WHERE NOT EXISTS (
 );
 
 INSERT INTO `ConfigDU` (`property`, `value`, `regex`, `sample`)
-SELECT 'ivar_term_name1', 'term1', '.*', 'ipadress of ivar server'
+SELECT 'ivar_term_name1', 'term1', '.*', 'terminal name'
 FROM DUAL
 WHERE NOT EXISTS (
     SELECT 1
@@ -74,7 +76,7 @@ WHERE NOT EXISTS (
 );
 
 INSERT INTO `ConfigDU` (`property`, `value`, `regex`, `sample`)
-SELECT 'ivar_term_name2', 'term2', '.*', 'ipadress of ivar server'
+SELECT 'ivar_term_name2', 'term2', '.*', 'terminal name'
 FROM DUAL
 WHERE NOT EXISTS (
     SELECT 1
@@ -151,10 +153,10 @@ WHERE property = 'appupdate' AND value = 'meritaccess/merit_access';
 DROP PROCEDURE IF EXISTS cleandb;
 DROP EVENT IF EXISTS clean_event;
 
-CREATE DEFINER=ma@localhost EVENT clean_event ON SCHEDULE EVERY 1 DAY STARTS '2024-09-19 12:01:20' ON COMPLETION NOT PRESERVE ENABLE DO CALL MeritAccessLocal.cleandb();
+CREATE DEFINER=`ma`@`localhost` EVENT clean_event ON SCHEDULE EVERY 1 DAY STARTS '2024-09-19 12:01:20' ON COMPLETION NOT PRESERVE ENABLE DO CALL MeritAccessLocal.cleandb();
 
 DELIMITER $$
-CREATE DEFINER=ma@localhost PROCEDURE cleandb()
+CREATE DEFINER=`ma`@`localhost` PROCEDURE cleandb()
 BEGIN
     DECLARE rc INT;
     DECLARE max_lines INT;
@@ -190,8 +192,11 @@ DELIMITER ;
 
 DELETE FROM running WHERE property = 'R1ReadCount';
 DELETE FROM running WHERE property = 'R2ReadCount';
-DELETE FROM ConfigDU WHERE property = 'SYSPLANREADER1';
-DELETE FROM ConfigDU WHERE property = 'SYSPLANREADER2';
+
+INSERT INTO running (`property`, `value`)
+SELECT 'change_time', ''
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM running WHERE property = 'change_time');
 
 INSERT INTO ConfigDU (`property`, `value`, `regex`, `sample`)
 SELECT 'enable_osdp', 0, '[0-1]+', 0
@@ -202,12 +207,14 @@ WHERE NOT EXISTS (
     WHERE `property` = 'enable_osdp'
 );
 
-CREATE TABLE IF NOT EXISTS `config_groups` (
-  `config_id` int(11) NOT NULL,
-  `groups_id` int(10) UNSIGNED NOT NULL,
-  PRIMARY KEY (`config_id`,`groups_id`),
-  KEY `fk_groups_id` (`groups_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+INSERT INTO ConfigDU (`property`, `value`, `regex`, `sample`)
+SELECT 'use_secure_channel', 1, '[0-1]+', '0 - not use, 1 - use'
+FROM DUAL
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM `ConfigDU`
+    WHERE `property` = 'use_secure_channel'
+);
 
 CREATE TABLE IF NOT EXISTS `Groups` (
   `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -224,10 +231,36 @@ INSERT IGNORE INTO `Groups` (`id`, `groupname`) VALUES
 (5, 'IVAR'),
 (6, 'OSDP');
 
+-- 1. Zjistíme, zda tabulka už existuje
+SET @table_exists := (
+    SELECT COUNT(*)
+    FROM information_schema.tables
+    WHERE table_schema = DATABASE()
+      AND table_name = 'config_groups'
+);
 
-ALTER TABLE `config_groups`
-  ADD CONSTRAINT `fk_config_id` FOREIGN KEY (`config_id`) REFERENCES `ConfigDU` (`id`),
-  ADD CONSTRAINT `fk_groups_id` FOREIGN KEY (`groups_id`) REFERENCES `Groups` (`id`);
+-- 2. Pokud neexistuje, vytvoříme ji
+CREATE TABLE IF NOT EXISTS `config_groups` (
+  `config_id` int(11) NOT NULL,
+  `groups_id` int(10) UNSIGNED NOT NULL,
+  PRIMARY KEY (`config_id`, `groups_id`),
+  KEY `fk_groups_id` (`groups_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- 3. Pokud tabulka předtím neexistovala, přidáme klíče
+SET @add_constraints := IF(@table_exists = 0,
+  'ALTER TABLE `config_groups`
+     ADD CONSTRAINT `fk_config_id` FOREIGN KEY (`config_id`) REFERENCES `ConfigDU` (`id`),
+     ADD CONSTRAINT `fk_groups_id` FOREIGN KEY (`groups_id`) REFERENCES `Groups` (`id`);',
+  'SELECT "Tabulka již existovala, klíče se nepřidávají";'
+);
+
+-- 4. Provedeme příkaz pro přidání klíčů
+PREPARE stmt FROM @add_constraints;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+
 
 
 INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 1, id from ConfigDU WHERE property like 'mode%';
@@ -251,7 +284,7 @@ INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 2, id from 
 
 INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 3, id from ConfigDU WHERE property like 'enablewifi%';
 INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 3, id from ConfigDU WHERE property like 'ssid%';
-INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 3, id from ConfigDU WHERE property like 'wifiuser`%';
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 3, id from ConfigDU WHERE property like 'wifiuser%';
 INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 3, id from ConfigDU WHERE property like 'wifipass%';
 
 INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 4, id from ConfigDU WHERE property like 'mqttenabled%';
@@ -264,26 +297,91 @@ INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 5, id from 
 INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 5, id from ConfigDU WHERE property like 'ivar_term_name2%';
 
 INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 6, id from ConfigDU WHERE property like 'enable_osdp%';
+INSERT ignore into `config_groups` (`groups_id`,`config_id` ) select 6, id from ConfigDU WHERE property like 'use_secure_channel%';
 
 
-CREATE OR REPLACE ALGORITHM=UNDEFINED DEFINER=ma@localhost SQL SECURITY DEFINER VIEW ConfigByGroups AS SELECT Groups.groupname AS groupname, ConfigDU.id AS id, ConfigDU.property AS property, ConfigDU.value AS value, ConfigDU.regex AS regex, ConfigDU.sample AS sample FROM ((config_groups join Groups on(config_groups.groups_id = Groups.id)) join ConfigDU on(config_groups.config_id = ConfigDU.id));
-
-CREATE TABLE IF NOT EXISTS `Readers` (
-    `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-    `protocol` varchar(20),
-    `address` tinyint UNSIGNED UNIQUE,
-    `active` tinyint(1) UNSIGNED,
-    `output` varchar(20),
-    `pulse_time` smallint UNSIGNED,
-    `sys_plan` smallint UNSIGNED,
-    PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE OR REPLACE ALGORITHM=UNDEFINED DEFINER=`ma`@`localhost` SQL SECURITY DEFINER VIEW ConfigByGroups AS SELECT Groups.groupname AS groupname, ConfigDU.id AS id, ConfigDU.property AS property, ConfigDU.value AS value, ConfigDU.regex AS regex, ConfigDU.sample AS sample FROM ((config_groups join Groups on(config_groups.groups_id = Groups.id)) join ConfigDU on(config_groups.config_id = ConfigDU.id));
 
 
-INSERT IGNORE INTO Readers(id, active, output, pulse_time, sys_plan) VALUES(1, 0, 'relay', 3000, 0);
-INSERT IGNORE INTO Readers(id, active, output, pulse_time, sys_plan) VALUES(2, 0, 'relay', 3000, 0);
-INSERT IGNORE INTO Readers(id, active, output, pulse_time, sys_plan) VALUES(3, 0, 'gpio', 3000, 0);
-INSERT IGNORE INTO Readers(id, active, output, pulse_time, sys_plan) VALUES(4, 0, 'gpio', 3000, 0);
+DELIMITER $$
 
+CREATE PROCEDURE update_readers()
+BEGIN
+    DECLARE table_exists INT DEFAULT 0;
+    DECLARE has_column INT DEFAULT 0;
+    DECLARE sysplan1 INT DEFAULT 0;
+    DECLARE sysplan2 INT DEFAULT 0;
 
+    -- Zjistíme, zda tabulka Readers existuje
+    SELECT COUNT(*)
+    INTO table_exists
+    FROM information_schema.tables
+    WHERE table_schema = DATABASE() AND table_name = 'Readers';
+
+    -- Pokud tabulka existuje, zjistíme, jestli má sloupec max_open_time
+    IF table_exists = 1 THEN
+        SELECT COUNT(*)
+        INTO has_column
+        FROM information_schema.columns
+        WHERE table_schema = DATABASE()
+          AND table_name = 'Readers'
+          AND column_name = 'max_open_time';
+    END IF;
+
+    -- Načteme hodnoty SYSPLANREADER1 a SYSPLANREADER2 z ConfigDU
+SELECT COALESCE((
+  SELECT CAST(`value` AS UNSIGNED)
+   FROM `ConfigDU`
+   WHERE `property`='SYSPLANREADER1'
+   LIMIT 1
+  ), 0)
+INTO sysplan1;
+
+SELECT COALESCE((
+  SELECT CAST(`value` AS UNSIGNED)
+  FROM `ConfigDU`
+  WHERE `property`='SYSPLANREADER2'
+  LIMIT 1
+ ), 0)
+ INTO sysplan2;
+
+    -- Vytvoření nové tabulky nebo přepsání staré
+    IF table_exists = 0 OR has_column = 0 THEN
+        IF table_exists = 1 AND has_column = 0 THEN
+            DROP TABLE IF EXISTS `Readers`;
+        END IF;
+        CREATE TABLE `Readers` (`id` int(10) UNSIGNED NOT NULL, `protocol` varchar(20) DEFAULT NULL,`address` tinyint(3) UNSIGNED DEFAULT NULL,`secure_key` varchar(32) DEFAULT NULL,`active` tinyint(1) UNSIGNED DEFAULT NULL,`output` varchar(20) DEFAULT NULL,
+                				`pulse_time` smallint(5) UNSIGNED DEFAULT NULL,`sys_plan` smallint(5) UNSIGNED DEFAULT NULL,`monitor` tinyint(3) UNSIGNED NOT NULL DEFAULT 1,`monitor_default` tinyint(3) UNSIGNED NOT NULL DEFAULT 1,`max_open_time` smallint(5) UNSIGNED NOT NULL DEFAULT 30000,
+                                 PRIMARY KEY (`id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+                                 
+        INSERT IGNORE INTO Readers(`id`, `protocol`, `active`, `output`, `pulse_time`, `sys_plan`, `monitor`, `monitor_default`, `max_open_time`) VALUES
+        (1, 'wiegand',1, 'relay', 3000, 0, 0, 0, 30000),
+        (2, 'wiegand',1, 'relay', 3000, 0, 0, 0, 30000),
+        (3, NULL,0, 'relay', 3000, 0, 0, 0, 30000),
+        (4, NULL,0, 'relay', 3000, 0, 0, 0, 30000);
+    END IF;
+    UPDATE Readers SET sys_plan = sysplan1 WHERE id = 1;
+    UPDATE Readers SET sys_plan = sysplan2 WHERE id = 2;
+    DELETE FROM `ConfigDU` WHERE `property` IN ('SYSPLANREADER1','SYSPLANREADER2');
+END$$
+DELIMITER ;
+
+CALL update_readers();
+
+DROP PROCEDURE IF EXISTS update_readers;
+
+INSERT INTO `ConfigDU` (`property`,`value`,`regex`,`sample`) SELECT 'log_level','info','.*','debug, info, warn, error, critical'
+FROM DUAL
+WHERE NOT EXISTS ( SELECT 1 FROM `ConfigDU` WHERE `property`='log_level' );
+
+INSERT INTO `config_groups` (`groups_id`, `config_id`) SELECT 1, c.`id` FROM `ConfigDU` c
+WHERE c.`property` LIKE 'log_level%'
+  AND NOT EXISTS (
+    SELECT 1
+    FROM `config_groups` cg
+    WHERE cg.`groups_id` = 1
+      AND cg.`config_id` = c.`id`
+);
+
+ALTER TABLE `Readers` ADD COLUMN IF NOT EXISTS `has_monitor` TINYINT UNSIGNED NOT NULL DEFAULT 0;
 
